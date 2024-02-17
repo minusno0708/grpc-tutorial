@@ -22,7 +22,7 @@ type myServer struct {
 
 func (s *myServer) Hello(ctx context.Context, req *hellopb.HelloRequest) (*hellopb.HelloResponse, error) {
 	return &hellopb.HelloResponse{
-		Message: fmt.Sprintf("Hello %s", req.GetName()),
+		Message: fmt.Sprintf("Hello %s!", req.GetName()),
 	}, nil
 }
 
@@ -30,7 +30,7 @@ func (s *myServer) HelloServerStream(req *hellopb.HelloRequest, stream hellopb.G
 	resCount := 5
 	for i := 0; i < resCount; i++ {
 		if err := stream.Send(&hellopb.HelloResponse{
-			Message: fmt.Sprintf("[%d] Hello, %s", i, req.GetName()),
+			Message: fmt.Sprintf("[%d] Hello, %s!", i, req.GetName()),
 		}); err != nil {
 			return err
 		}
@@ -53,6 +53,24 @@ func (s *myServer) HelloClientStream(stream hellopb.GreetingService_HelloClientS
 			return err
 		}
 		nameList = append(nameList, req.GetName())
+	}
+}
+
+func (s *myServer) HelloBiStream(stream hellopb.GreetingService_HelloBiStreamServer) error {
+	for {
+		req, err := stream.Recv()
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		message := fmt.Sprintf("Hello, %v!", req.GetName())
+		if err := stream.Send(&hellopb.HelloResponse{
+			Message: message,
+		}); err != nil {
+			return err
+		}
 	}
 }
 
