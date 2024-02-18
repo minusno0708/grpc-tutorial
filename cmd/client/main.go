@@ -1,22 +1,24 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"os"
 	"bufio"
 	"context"
-	"io"
 	"errors"
+	"fmt"
+	"io"
+	"log"
+	"os"
+
+	hellopb "mygrpc/pkg/grpc"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	hellopb "mygrpc/pkg/grpc"
+	"google.golang.org/grpc/status"
 )
 
 var (
 	scanner *bufio.Scanner
-	client hellopb.GreetingServiceClient
+	client  hellopb.GreetingServiceClient
 )
 
 func main() {
@@ -53,7 +55,7 @@ func main() {
 		switch in {
 		case "1":
 			Hello()
-		case "2": 
+		case "2":
 			HelloServerStream()
 		case "3":
 			HelloClientStream()
@@ -77,7 +79,12 @@ func Hello() {
 	}
 	res, err := client.Hello(context.Background(), req)
 	if err != nil {
-		fmt.Println(err)
+		if stat, ok := status.FromError(err); ok {
+			fmt.Printf("code: %s\n", stat.Code())
+			fmt.Printf("message: %s\n", stat.Message())
+		} else {
+			fmt.Println(err)
+		}
 	} else {
 		fmt.Println(res.GetMessage())
 	}
@@ -133,7 +140,7 @@ func HelloClientStream() {
 	}
 
 	res, err := stream.CloseAndRecv()
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
 	} else {
 		fmt.Println(res.GetMessage())
@@ -165,7 +172,7 @@ func HelloBiStream() {
 				sendEnd = true
 			}
 
-			if sendCount ==sendNum {
+			if sendCount == sendNum {
 				sendEnd = true
 				if err := stream.CloseSend(); err != nil {
 					fmt.Println(err)
